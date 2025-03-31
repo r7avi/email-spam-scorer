@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import { Email } from '@/models/Email';
-import { EmailAnalyzer } from '@/services/emailAnalyzer';
+import { Email } from '../../../lib/email-adapter';
+import { EmailAnalyzer } from '../../../lib/analyzer-adapter';
 import crypto from 'crypto';
 
 export async function POST(request) {
@@ -53,7 +53,7 @@ export async function GET(request) {
       return NextResponse.json({ error: 'Email address is required' }, { status: 400 });
     }
 
-    const emails = await Email.findByAddress(address);
+    const emails = await Email.find({ address });
     return NextResponse.json({ emails });
   } catch (error) {
     console.error('Error fetching emails:', error);

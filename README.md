@@ -1,36 +1,91 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# Email Spam Scorer
 
-## Getting Started
+A system to receive, analyze, and score emails for spam indicators.
 
-First, run the development server:
+## Features
 
+- Generate random email addresses for testing
+- Receive and analyze emails for spam indicators
+- View emails with spam scores and analysis
+- SMTP server integration with Postfix
+
+## Setup
+
+### Prerequisites
+
+- Node.js 18+ and npm
+- MongoDB
+- PM2 (for process management)
+
+### Local Development
+
+1. Clone the repository
+2. Install dependencies:
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+3. Create a `.env.local` file with your MongoDB connection string:
+```
+MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/email-spam-scorer
+```
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+4. Start the development server:
+```bash
+npm run dev
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+5. In a separate terminal, start the email receiver:
+```bash
+npm run email-receiver
+```
 
-## Learn More
+6. Access the application at http://localhost:3000
 
-To learn more about Next.js, take a look at the following resources:
+### Linux Server Deployment
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+1. Clone the repository on your server
+2. Set up your `.env.local` file
+3. Make the restart script executable:
+```bash
+chmod +x restart.sh
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+4. Run the restart script:
+```bash
+./restart.sh
+```
 
-## Deploy on Vercel
+This will:
+- Stop any running PM2 processes
+- Clean any previous builds
+- Install dependencies
+- Start the email receiver
+- Start the Next.js application
+- Save the PM2 process list
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+5. Access the application at http://YOUR_SERVER_IP:3000
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Troubleshooting
+
+### Common Issues
+
+- **Next.js build errors**: Try running the clean build script:
+```bash
+chmod +x clean-build.sh
+./clean-build.sh
+```
+
+- **Email receiver not starting**: Check the PM2 logs:
+```bash
+pm2 logs email-receiver
+```
+
+- **Postfix connection errors**: Make sure port 3001 is open and the email receiver is running
+
+## Architecture
+
+- Next.js frontend for the web interface
+- Node.js SMTP server for receiving emails
+- MongoDB for storing emails and analysis
+- Postfix integration for email forwarding

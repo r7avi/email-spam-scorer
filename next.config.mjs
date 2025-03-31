@@ -17,6 +17,10 @@ const nextConfig = {
   },
   // Allow transpiling of files from specific directories
   transpilePackages: [],
+  // Allow importing CommonJS modules
+  experimental: {
+    esmExternals: 'loose',
+  },
 };
 
 export default nextConfig;

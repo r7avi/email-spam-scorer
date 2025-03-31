@@ -1,9 +1,5 @@
 import { NextResponse } from 'next/server';
-import path from 'path';
-
-// Fix the import path for Email
-const emailModelPath = path.join(process.cwd(), 'src', 'models', 'Email.js');
-const { Email } = require(emailModelPath);
+import { Email } from '../../../lib/email-adapter';
 
 export async function GET(request) {
   try {

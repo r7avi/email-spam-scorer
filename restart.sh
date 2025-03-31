@@ -5,6 +5,10 @@ echo "Stopping all PM2 processes..."
 pm2 stop all
 pm2 delete all
 
+# Clean previous builds
+echo "Cleaning previous builds..."
+rm -rf .next
+
 # Install dependencies
 echo "Installing dependencies..."
 npm install
