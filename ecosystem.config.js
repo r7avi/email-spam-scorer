@@ -21,6 +21,11 @@ module.exports = {
         NODE_ENV: 'development',
         PORT: 3001,
         MONGODB_URI: 'mongodb+srv://ir7avi:QrDNheBivvUmZNBp@cluster0.cfyi8.mongodb.net/email-spam-scorer'
+      },
+      env_production: {
+        NODE_ENV: 'production',
+        PORT: 3001,
+        MONGODB_URI: 'mongodb+srv://ir7avi:QrDNheBivvUmZNBp@cluster0.cfyi8.mongodb.net/email-spam-scorer'
       }
     }
   ]

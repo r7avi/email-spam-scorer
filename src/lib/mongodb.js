@@ -1,24 +1,26 @@
 const { MongoClient } = require('mongodb');
 
-if (!process.env.MONGODB_URI) {
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://ir7avi:QrDNheBivvUmZNBp@cluster0.cfyi8.mongodb.net/email-spam-scorer';
+
+if (!MONGODB_URI) {
   throw new Error('Please add your Mongo URI to .env.local');
 }
 
-const uri = process.env.MONGODB_URI;
-const options = {};
+let cachedClient = null;
+let cachedDb = null;
 
-let client;
-let clientPromise;
-
-if (process.env.NODE_ENV === 'development') {
-  if (!global._mongoClientPromise) {
-    client = new MongoClient(uri, options);
-    global._mongoClientPromise = client.connect();
+async function connectToDatabase() {
+  if (cachedClient && cachedDb) {
+    return { client: cachedClient, db: cachedDb };
   }
-  clientPromise = global._mongoClientPromise;
-} else {
-  client = new MongoClient(uri, options);
-  clientPromise = client.connect();
+
+  const client = await MongoClient.connect(MONGODB_URI);
+  const db = client.db();
+
+  cachedClient = client;
+  cachedDb = db;
+
+  return { client, db };
 }
 
-module.exports = clientPromise; 
+module.exports = { connectToDatabase }; 

@@ -1,4 +1,4 @@
-require('dotenv').config();
+require('dotenv').config({ path: '.env.local' });
 const net = require('net');
 const { Email } = require('../models/Email');
 const { EmailAnalyzer } = require('../services/emailAnalyzer');
