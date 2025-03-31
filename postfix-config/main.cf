@@ -1,0 +1,47 @@
+# Basic Settings
+myhostname = cloudpanels.store
+mydomain = cloudpanels.store
+myorigin = $mydomain
+inet_interfaces = all
+inet_protocols = ipv4
+mydestination = localhost.$mydomain, localhost
+mynetworks = 127.0.0.0/8 [::ffff:127.0.0.0]/104 [::1]/128 172.235.5.162/32
+mailbox_size_limit = 0
+message_size_limit = 0
+
+# Virtual Domains
+virtual_alias_domains = cloudpanels.store
+virtual_alias_maps = hash:/etc/postfix/virtual
+
+# Transport
+transport_maps = hash:/etc/postfix/transport
+
+# Local Delivery
+local_transport = error:local delivery is disabled
+
+# SMTP Settings
+smtpd_recipient_restrictions = permit_mynetworks, reject_unauth_destination
+smtpd_relay_restrictions = permit_mynetworks, permit_sasl_authenticated, reject_unauth_destination
+smtpd_sasl_auth_enable = no
+smtpd_sasl_security_options = noanonymous
+smtpd_sasl_type = dovecot
+
+# TLS Settings
+smtpd_tls_cert_file = /etc/ssl/certs/ssl-cert-snakeoil.pem
+smtpd_tls_key_file = /etc/ssl/private/ssl-cert-snakeoil.key
+smtpd_use_tls = yes
+smtpd_tls_auth_only = yes
+smtpd_tls_security_level = may
+smtpd_tls_mandatory_protocols = !SSLv2, !SSLv3
+smtpd_tls_mandatory_ciphers = medium
+smtpd_tls_loglevel = 1
+
+# Logging
+maillog_file = /var/log/mail.log
+
+# Additional Settings
+append_dot_mydomain = no
+append_at_myorigin = no
+myhostname = cloudpanels.store
+myorigin = cloudpanels.store
+mydomain = cloudpanels.store 

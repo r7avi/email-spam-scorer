@@ -1,0 +1,5 @@
+# Transport map for cloudpanels.store
+# Format: address@domain.com    transport:destination
+# Forward all emails to our application
+application@localhost    smtp:127.0.0.1:3001
+application@localhost.cloudpanels.store    smtp:127.0.0.1:3001 

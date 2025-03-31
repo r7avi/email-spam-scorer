@@ -1,0 +1,6 @@
+# Virtual alias map for cloudpanels.store
+# Format: address@domain.com    destination
+# Forward all emails to our application
+@cloudpanels.store    application@localhost
+application@localhost    application@localhost
+application@localhost.cloudpanels.store    application@localhost 
