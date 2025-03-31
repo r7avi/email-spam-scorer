@@ -1,76 +1,103 @@
-require('dotenv').config({ path: '.env.local' });
-const net = require('net');
+const path = require('path');
+
+// Load environment variables first from the correct path
+require('dotenv').config({ path: path.resolve(__dirname, '../../.env.local') });
+
+// Import proper SMTP server library
+const { SMTPServer } = require('smtp-server');
+const { simpleParser } = require('mailparser');
 const { Email } = require('../models/Email');
 const { EmailAnalyzer } = require('../services/emailAnalyzer');
+const { initConnection } = require('../lib/mongodb');
 
-const SMTP_PORT = 3001;
+const SMTP_PORT = process.env.EMAIL_RECEIVER_PORT || 3001;
 
-const server = net.createServer((socket) => {
-  let emailData = {
-    from: '',
-    to: '',
-    subject: '',
-    headers: {},
-    content: ''
-  };
+async function startServer() {
+  try {
+    // Test MongoDB connection before starting server
+    await initConnection();
+    console.log('MongoDB connection successful');
 
-  let currentLine = '';
-  let isInHeaders = true;
-  let isInData = false;
-
-  socket.on('data', (data) => {
-    const lines = data.toString().split('\r\n');
-    
-    for (const line of lines) {
-      if (line === '') {
-        if (isInHeaders) {
-          isInHeaders = false;
-          isInData = true;
-        }
-        continue;
-      }
-
-      if (isInHeaders) {
-        const [key, value] = line.split(': ');
-        if (key && value) {
-          emailData.headers[key.toLowerCase()] = value;
+    // Create SMTP server
+    const server = new SMTPServer({
+      // Allow insecure auth
+      authOptional: true,
+      
+      // Don't require STARTTLS
+      disabledCommands: ['STARTTLS'],
+      
+      // Don't validate MAIL FROM and RCPT TO commands
+      disableReverseLookup: true,
+      
+      // Maximum allowed message size in bytes
+      size: 10 * 1024 * 1024, // 10 MB
+      
+      // Handler for SMTP envelope
+      onMailFrom(address, session, callback) {
+        console.log('Mail from:', address.address);
+        return callback();
+      },
+      
+      // Handler for recipients
+      onRcptTo(address, session, callback) {
+        console.log('Recipient:', address.address);
+        return callback();
+      },
+      
+      // Handler for message data
+      async onData(stream, session, callback) {
+        try {
+          console.log('Receiving email...');
           
-          if (key.toLowerCase() === 'from') {
-            emailData.from = value;
-          } else if (key.toLowerCase() === 'to') {
-            emailData.to = value;
-          } else if (key.toLowerCase() === 'subject') {
-            emailData.subject = value;
-          }
+          // Parse email data
+          const parsed = await simpleParser(stream);
+          
+          // Create email data object
+          const emailData = {
+            from: parsed.from?.text || '',
+            to: parsed.to?.text || '',
+            subject: parsed.subject || '',
+            content: parsed.text || parsed.html || '',
+            headers: parsed.headers || {},
+            createdAt: new Date()
+          };
+          
+          console.log('Processing email from:', emailData.from);
+          console.log('Subject:', emailData.subject);
+          
+          // Analyze the email
+          const analysis = EmailAnalyzer.analyzeEmail(emailData);
+          emailData.score = analysis.score;
+          emailData.analysis = analysis;
+          
+          console.log('Analysis score:', analysis.score);
+          
+          // Store in database
+          const result = await Email.create(emailData);
+          console.log('Email stored in database with ID:', result.insertedId);
+          
+          callback();
+        } catch (error) {
+          console.error('Error processing email:', error);
+          callback(new Error('Error processing email'));
         }
-      } else if (isInData) {
-        emailData.content += line + '\n';
+      },
+      
+      // Error handler
+      onError(err) {
+        console.error('SMTP Server Error:', err);
       }
-    }
-  });
+    });
 
-  socket.on('end', async () => {
-    try {
-      // Analyze the email
-      const analysis = EmailAnalyzer.analyzeEmail(emailData);
-      emailData.score = analysis.score;
-      emailData.analysis = analysis;
+    // Start server
+    server.listen(SMTP_PORT, '0.0.0.0', () => {
+      console.log(`SMTP server listening on all interfaces on port ${SMTP_PORT}`);
+    });
+    
+  } catch (error) {
+    console.error('Failed to start server:', error);
+    process.exit(1);
+  }
+}
 
-      // Store in database
-      await Email.create(emailData);
-
-      // Send success response
-      socket.write('250 OK\r\n');
-      socket.end();
-    } catch (error) {
-      console.error('Error processing email:', error);
-      socket.write('500 Error processing email\r\n');
-      socket.end();
-    }
-  });
-});
-
-// Listen on all network interfaces
-server.listen(SMTP_PORT, '0.0.0.0', () => {
-  console.log(`SMTP server listening on all interfaces on port ${SMTP_PORT}`);
-}); 
+startServer(); 

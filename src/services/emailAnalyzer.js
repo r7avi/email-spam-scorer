@@ -1,108 +1,87 @@
 class EmailAnalyzer {
-  static analyzeEmail(email) {
+  static analyzeEmail(emailData) {
+    // Initialize analysis object
     const analysis = {
-      score: 0,
-      issues: [],
-      details: {}
+      hasSpamKeywords: false,
+      hasMaliciousLinks: false,
+      hasSuspiciousAttachments: false,
+      hasDeceptiveSender: false,
+      hasExcessiveFormatting: false,
+      hasSuspiciousTopic: false,
+      score: 0
     };
 
-    // Check headers
-    this.analyzeHeaders(email.headers, analysis);
+    // Check for spam keywords in subject and content
+    const spamKeywords = [
+      'urgent', 'money', 'cash', 'free', 'winner', 'prize', 'offer',
+      'limited time', 'act now', 'click here', 'discount', 'congratulations',
+      'viagra', 'pharmacy', 'medications', 'pills', 'enlargement',
+      'bank account', 'wire transfer', 'prince', 'lottery', 'million'
+    ];
 
-    // Check content
-    this.analyzeContent(email.content, analysis);
+    const subject = emailData.subject?.toLowerCase() || '';
+    const content = emailData.content?.toLowerCase() || '';
 
-    // Check subject
-    this.analyzeSubject(email.subject, analysis);
+    // Check for spam keywords
+    analysis.hasSpamKeywords = spamKeywords.some(keyword => 
+      subject.includes(keyword) || content.includes(keyword)
+    );
 
-    // Check sender
-    this.analyzeSender(email.from, analysis);
+    // Check for suspicious links
+    const suspiciousLinkPatterns = [
+      /bit\.ly/i, /tinyurl/i, /goo\.gl/i, /click here/i,
+      /verify your account/i, /suspicious activity/i
+    ];
+    
+    analysis.hasMaliciousLinks = suspiciousLinkPatterns.some(pattern => 
+      pattern.test(content)
+    );
 
-    // Calculate final score (0-100, higher is better)
-    analysis.score = Math.max(0, Math.min(100, 100 - (analysis.issues.length * 10)));
+    // Check for attachments
+    analysis.hasSuspiciousAttachments = content.includes('attachment') && 
+      (content.includes('.exe') || content.includes('.zip') || content.includes('.rar'));
+
+    // Check for deceptive sender
+    analysis.hasDeceptiveSender = emailData.from && (
+      emailData.from.includes('noreply') ||
+      emailData.from.includes('notification') ||
+      emailData.from.includes('support') ||
+      emailData.from.includes('service') ||
+      emailData.from.includes('admin')
+    );
+
+    // Check for excessive formatting
+    analysis.hasExcessiveFormatting = 
+      (content.match(/!+/g) || []).length > 3 ||
+      (content.match(/\$+/g) || []).length > 2 ||
+      content.includes('URGENT') || 
+      content.includes('IMPORTANT');
+
+    // Check for suspicious topics
+    const suspiciousTopics = [
+      'account suspended', 'verify your account', 'payment failed',
+      'security alert', 'password reset', 'unusual activity',
+      'inheritance', 'business proposal', 'investment opportunity'
+    ];
+    
+    analysis.hasSuspiciousTopic = suspiciousTopics.some(topic => 
+      subject.includes(topic.toLowerCase()) || content.includes(topic.toLowerCase())
+    );
+
+    // Calculate score (0-100)
+    // Higher score means higher spam probability
+    let score = 0;
+    if (analysis.hasSpamKeywords) score += 25;
+    if (analysis.hasMaliciousLinks) score += 30;
+    if (analysis.hasSuspiciousAttachments) score += 35;
+    if (analysis.hasDeceptiveSender) score += 15;
+    if (analysis.hasExcessiveFormatting) score += 15;
+    if (analysis.hasSuspiciousTopic) score += 20;
+
+    // Cap score at 100
+    analysis.score = Math.min(score, 100);
 
     return analysis;
-  }
-
-  static analyzeHeaders(headers, analysis) {
-    if (!headers) return;
-
-    // Check for missing important headers
-    if (!headers['dkim-signature']) {
-      analysis.issues.push('Missing DKIM signature');
-      analysis.details.dkim = false;
-    }
-
-    if (!headers['spf']) {
-      analysis.issues.push('Missing SPF record');
-      analysis.details.spf = false;
-    }
-
-    // Check for suspicious headers
-    if (headers['x-priority'] === '1') {
-      analysis.issues.push('High priority flag used');
-      analysis.details.highPriority = true;
-    }
-  }
-
-  static analyzeContent(content, analysis) {
-    if (!content) return;
-
-    // Check for spam trigger words
-    const spamWords = ['viagra', 'lottery', 'winner', 'inheritance', 'urgent', 'congratulations'];
-    const foundSpamWords = spamWords.filter(word => 
-      content.toLowerCase().includes(word)
-    );
-
-    if (foundSpamWords.length > 0) {
-      analysis.issues.push(`Contains spam trigger words: ${foundSpamWords.join(', ')}`);
-      analysis.details.spamWords = foundSpamWords;
-    }
-
-    // Check for excessive punctuation
-    const exclamationCount = (content.match(/!/g) || []).length;
-    if (exclamationCount > 3) {
-      analysis.issues.push('Excessive use of exclamation marks');
-      analysis.details.exclamationCount = exclamationCount;
-    }
-  }
-
-  static analyzeSubject(subject, analysis) {
-    if (!subject) return;
-
-    // Check for all caps
-    if (subject === subject.toUpperCase()) {
-      analysis.issues.push('Subject is in all caps');
-      analysis.details.allCapsSubject = true;
-    }
-
-    // Check for spam trigger words in subject
-    const spamWords = ['viagra', 'lottery', 'winner', 'inheritance', 'urgent', 'congratulations'];
-    const foundSpamWords = spamWords.filter(word => 
-      subject.toLowerCase().includes(word)
-    );
-
-    if (foundSpamWords.length > 0) {
-      analysis.issues.push(`Subject contains spam trigger words: ${foundSpamWords.join(', ')}`);
-      analysis.details.subjectSpamWords = foundSpamWords;
-    }
-  }
-
-  static analyzeSender(from, analysis) {
-    if (!from) return;
-
-    // Check for suspicious sender patterns
-    if (from.includes('noreply@') || from.includes('no-reply@')) {
-      analysis.issues.push('Uses no-reply address');
-      analysis.details.noReplyAddress = true;
-    }
-
-    // Check for random-looking sender addresses
-    const randomPattern = /[a-z0-9]{10,}@/i;
-    if (randomPattern.test(from)) {
-      analysis.issues.push('Sender address looks random');
-      analysis.details.randomSender = true;
-    }
   }
 }
 

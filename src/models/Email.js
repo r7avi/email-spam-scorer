@@ -1,4 +1,4 @@
-const clientPromise = require('../lib/mongodb');
+const { initConnection } = require('../lib/mongodb');
 
 const COLLECTION_NAME = 'emails';
 
@@ -15,24 +15,35 @@ class Email {
     this.createdAt = new Date();
   }
 
-  static async create(data) {
-    const client = await clientPromise;
-    const collection = client.db().collection(COLLECTION_NAME);
-    const email = new Email(data);
-    await collection.insertOne(email);
-    return email;
+  static async create(emailData) {
+    try {
+      const { db } = await initConnection();
+      const result = await db.collection(COLLECTION_NAME).insertOne(emailData);
+      return result;
+    } catch (error) {
+      console.error('Error creating email:', error);
+      throw error;
+    }
   }
 
-  static async findByAddress(address) {
-    const client = await clientPromise;
-    const collection = client.db().collection(COLLECTION_NAME);
-    return collection.find({ address }).toArray();
+  static async find(query = {}) {
+    try {
+      const { db } = await initConnection();
+      return await db.collection(COLLECTION_NAME).find(query).toArray();
+    } catch (error) {
+      console.error('Error finding emails:', error);
+      throw error;
+    }
   }
 
-  static async findById(id) {
-    const client = await clientPromise;
-    const collection = client.db().collection(COLLECTION_NAME);
-    return collection.findOne({ id });
+  static async findOne(query) {
+    try {
+      const { db } = await initConnection();
+      return await db.collection(COLLECTION_NAME).findOne(query);
+    } catch (error) {
+      console.error('Error finding email:', error);
+      throw error;
+    }
   }
 }
 
